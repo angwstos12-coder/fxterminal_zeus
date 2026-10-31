@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="el" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Chart Intelligence — AI Institutional Terminal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    body { background-color: #070b12; color: #e2e8f0; font-family: Inter, system-ui, sans-serif; }
+    .panel { background: #0f1623; border: 1px solid #1e293b; border-radius: 0.5rem; padding: 0.75rem; }
+    .tf-btn { padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-family: monospace; cursor: pointer; border: 1px solid #1e293b; background: #090d16; color: #94a3b8; }
+    .tf-btn.active { background: #2563eb; color: #ffffff; border-color: #3b82f6; font-weight: 700; }
+  </style>
+</head>
+<body class="p-2.5 min-h-screen flex flex-col gap-2.5">
+
+  <header class="panel flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-pulse">● AI NEURAL ACTIVE</span>
+      
+      <select id="pair-select" onchange="changePair(this.value)" class="bg-slate-900 text-white font-bold text-base px-2.5 py-1 rounded border border-slate-700 cursor-pointer">
+        <optgroup label="Dollar Pairs (Majors)">
+          <option value="USDCAD" selected>USD/CAD</option>
+          <option value="EURUSD">EUR/USD</option>
+          <option value="GBPUSD">GBP/USD</option>
+          <option value="USDJPY">USD/JPY</option>
+          <option value="AUDUSD">AUD/USD</option>
+        </optgroup>
+        <optgroup label="JPY Crosses">
+          <option value="GBPJPY">GBP/JPY</option>
+          <option value="EURJPY">EUR/JPY</option>
+          <option value="AUDJPY">AUD/JPY</option>
+          <option value="CHFJPY">CHF/JPY</option>
+          <option value="CADJPY">CAD/JPY</option>
+        </optgroup>
+        <optgroup label="Other Crosses">
+          <option value="EURCAD">EUR/CAD</option>
+          <option value="AUDCAD">AUD/CAD</option>
+          <option value="GBPCAD">GBP/CAD</option>
+          <option value="EURAUD">EUR/AUD</option>
+          <option value="GBPAUD">GBP/AUD</option>
+          <option value="EURGBP">EUR/GBP</option>
+        </optgroup>
+        <optgroup label="Assets & Indices">
+          <option value="XAUUSD">GOLD (XAU/USD)</option>
+          <option value="WTI">WTI CRUDE OIL</option>
+          <option value="NAS100">NAS100 (NASDAQ)</option>
+          <option value="DXY">US DOLLAR INDEX (DXY)</option>
+        </optgroup>
+      </select>
+
+      <span id="bias-badge" class="px-2.5 py-0.5 rounded text-xs font-bold bg-slate-800 text-slate-300">READY</span>
+    </div>
+    <div class="flex items-center gap-4 text-xs font-mono">
+      <div>Price: <span id="live-price" class="font-bold text-white text-base">--</span></div>
+      <div>Updated: <span id="updated-at">--</span></div>
+    </div>
+  </header>
+
+  <main class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 flex-1">
+    
+    <!-- LEFT COLUMN -->
+    <div class="lg:col-span-3 flex flex-col gap-2.5">
+      <!-- NEURAL NETWORK AI PREDICTION & TRADE SETUP PANEL -->
+      <section class="panel border-indigo-500/40 bg-indigo-500/5">
+        <h2 class="text-[11px] font-bold uppercase tracking-wider text-indigo-400 mb-1">🧠 AI Neural Network & Trade Setup</h2>
+        <div id="neural-box" class="space-y-1.5 text-xs font-mono">
+          <div class="text-slate-400">Prediction: <span id="nn-pred" class="font-bold text-emerald-400">--</span></div>
+          <div class="text-slate-400">Confidence: <span id="nn-conf" class="text-white">--%</span></div>
+          <div class="text-slate-400">Duration: <span id="nn-horizon" class="text-amber-300">--</span></div>
+          <div class="pt-1 border-t border-slate-800 text-slate-300"><b>Action:</b> <span id="nn-action" class="text-cyan-400">--</span></div>
+        </div>
+      </section>
+
+      <!-- FORWARD TESTING & WIN-RATE TRACKING PANEL -->
+      <section class="panel border-emerald-500/30 bg-emerald-500/5">
+        <h2 class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 mb-1">📈 Forward Testing & Win-Rate</h2>
+        <div id="ft-box" class="space-y-1 text-xs font-mono text-slate-300">
+          <div>Win-Rate: <b id="ft-winrate" class="text-emerald-400">--%</b></div>
+          <div>Total Signals: <span id="ft-signals" class="text-white">--</span> (Wins: <span id="ft-wins">--</span> / Losses: <span id="ft-losses">--</span>)</div>
+          <div>Profit Factor: <b id="ft-pf" class="text-blue-400">--</b></div>
+        </div>
+      </section>
+
+      <!-- ECONOMIC HEATMAP WITH CPI & PPI -->
+      <section class="panel flex-1">
+        <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">📊 Macro Heatmap (CPI & PPI)</h2>
+        <table class="w-full text-xs text-left border-collapse mb-2">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400 text-[11px]">
+              <th class="py-1">Indicator</th>
+              <th id="th-base" class="py-1 text-blue-400">Base</th>
+              <th id="th-quote" class="py-1 text-orange-400">Quote</th>
+              <th class="py-1 text-right">Gap</th>
+            </tr>
+          </thead>
+          <tbody id="macro-table" class="divide-y divide-slate-800/60 font-mono text-xs"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <!-- CENTER COLUMN -->
+    <div class="lg:col-span-6 flex flex-col gap-2.5">
+      <section class="panel flex flex-col h-[380px]">
+        <div class="flex justify-between items-center mb-2">
+          <span id="chart-title" class="text-xs font-bold uppercase tracking-wider text-white">Chart</span>
+          <div class="flex gap-1" id="tf-buttons">
+            <button class="tf-btn" onclick="switchTimeframe('M15')">M15</button>
+            <button class="tf-btn" onclick="switchTimeframe('H1')">H1</button>
+            <button class="tf-btn active" onclick="switchTimeframe('H4')">H4</button>
+            <button class="tf-btn" onclick="switchTimeframe('D1')">D1</button>
+            <button class="tf-btn" onclick="switchTimeframe('W1')">W1</button>
+          </div>
+        </div>
+        <div id="tv-chart" class="w-full flex-1 rounded overflow-hidden"></div>
+      </section>
+
+      <!-- UPCOMING CALENDAR -->
+      <section class="panel flex-1">
+        <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">📅 Upcoming Calendar (Next 1–2 Weeks)</h2>
+        <div class="overflow-y-auto max-h-48 pr-1">
+          <table class="w-full text-left border-collapse text-[11px]">
+            <tbody id="calendar-table" class="divide-y divide-slate-800/60 font-mono"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="lg:col-span-3 flex flex-col gap-2.5">
+      <section class="panel">
+        <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">⚖️ Top Setups Conviction</h2>
+        <div id="factor-bars" class="space-y-2 text-xs font-mono"></div>
+      </section>
+
+      <!-- FILTERED NEWS WIRE PANEL -->
+      <section class="panel flex-1 flex flex-col overflow-hidden">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">📰 Filtered Pair News</h2>
+          <span id="news-count" class="text-[10px] font-mono text-slate-400">0 items</span>
+        </div>
+        <div id="news-list" class="space-y-2 overflow-y-auto text-xs pr-1 flex-1 max-h-[420px]"></div>
+      </section>
+    </div>
+
+  </main>
+
+  <script>
+    let currentPair = 'USDCAD';
+    let currentTF = 'H4';
+    let latestWorkspace = null;
+    let ws = null;
+
+    const chartContainer = document.getElementById('tv-chart');
+    const chart = LightweightCharts.createChart(chartContainer, {
+      layout: { background: { color: '#090d16' }, textColor: '#94a3b8' },
+      grid: { vertLines: { color: '#162032' }, horzLines: { color: '#162032' } },
+      rightPriceScale: { borderColor: '#1e293b' },
+      timeScale: { borderColor: '#1e293b', timeVisible: true }
+    });
+    const candleSeries = chart.addCandlestickSeries({ upColor: '#10b981', downColor: '#ef4444' });
+
+    function fmtScore(val) {
+      if (val === undefined || val === null || isNaN(val)) return '0';
+      return (val > 0 ? '+' : '') + val;
+    }
+    function colorClass(val) {
+      return val > 0 ? 'text-emerald-400' : (val < 0 ? 'text-rose-400' : 'text-slate-300');
+    }
+
+    function switchTimeframe(tf) {
+      currentTF = tf;
+      document.querySelectorAll('#tf-buttons .tf-btn').forEach(btn => btn.classList.toggle('active', btn.textContent === tf));
+      if (latestWorkspace) updateChartCandles(latestWorkspace);
+    }
+
+    function updateChartCandles(data) {
+      if (!data || !data.technicals) return;
+      const candles = (data.technicals.candles_by_tf || {})[currentTF] || data.technicals.candles_h4 || [];
+      if (candles.length > 0) {
+        candleSeries.setData(candles);
+        chart.timeScale().fitContent();
+      }
+    }
+
+    function renderWorkspace(data) {
+      if (!data) return;
+      latestWorkspace = data;
+      
+      document.getElementById('updated-at').textContent = data.updated_at || '--';
+      document.getElementById('live-price').textContent = data.technicals?.price || '--';
+      document.getElementById('chart-title').textContent = `${data.pair || currentPair} · ${currentTF} Chart`;
+
+      // Neural Network Prediction & Trade Setup UI
+      const nn = data.neural_prediction || {};
+      const nnPredEl = document.getElementById('nn-pred');
+      const nnConfEl = document.getElementById('nn-conf');
+      if (nnPredEl) {
+        nnPredEl.textContent = nn.prediction || 'NEUTRAL';
+        nnPredEl.className = `font-bold ${(nn.prediction || '').includes('BULLISH') ? 'text-emerald-400' : 'text-rose-400'}`;
+      }
+      if (nnConfEl) {
+        nnConfEl.textContent = `${nn.confidence_pct || 50}%`;
+      }
+      document.getElementById('nn-horizon').textContent = nn.time_horizon || 'Standard';
+      document.getElementById('nn-action').textContent = nn.trade_action || 'WAIT';
+
+      // Forward Testing & Win-Rate UI
+      const ft = data.forward_testing || {};
+      document.getElementById('ft-winrate').textContent = `${ft.win_rate_pct || 0}%`;
+      document.getElementById('ft-signals').textContent = ft.total_signals || 0;
+      document.getElementById('ft-wins').textContent = ft.winning_signals || 0;
+      document.getElementById('ft-losses').textContent = ft.losing_signals || 0;
+      document.getElementById('ft-pf').textContent = ft.profit_factor || 0;
+
+      const sum = data.summary || {};
+      const badge = document.getElementById('bias-badge');
+      const score = sum.composite_score || 0;
+      if (badge) {
+        badge.textContent = `${sum.bias || 'NEUTRAL'} · Grade ${sum.grade || 'C'} (${fmtScore(score)})`;
+        badge.className = `px-2.5 py-0.5 rounded text-xs font-bold ${score > 5 ? 'bg-emerald-600 text-white' : (score < -5 ? 'bg-rose-600 text-white' : 'bg-slate-700 text-slate-200')}`;
+      }
+
+      updateChartCandles(data);
+
+      // Macro Heatmap
+      const thBase = document.getElementById('th-base');
+      const thQuote = document.getElementById('th-quote');
+      if (thBase) thBase.textContent = data.base_ccy;
+      if (thQuote) thQuote.textContent = data.quote_ccy;
+
+      const macroTbody = document.getElementById('macro-table');
+      if (macroTbody && data.macro) {
+        macroTbody.innerHTML = '';
+        const basePillars = data.macro.base?.pillars || {};
+        const quotePillars = data.macro.quote?.pillars || {};
+        const gaps = data.macro.gaps || {};
+        for (const p of ['growth', 'cpi', 'ppi', 'labour']) {
+          const u = basePillars[p] || 0;
+          const c = quotePillars[p] || 0;
+          const g = gaps[p] || 0;
+          macroTbody.innerHTML += `<tr>
+            <td class="py-1 uppercase text-slate-300 font-bold">${p}</td>
+            <td class="py-1 ${colorClass(u)}">${fmtScore(u)}</td>
+            <td class="py-1 ${colorClass(c)}">${fmtScore(c)}</td>
+            <td class="py-1 text-right font-bold ${colorClass(g)}">${fmtScore(g)}</td>
+          </tr>`;
+        }
+      }
+
+      // Calendar
+      const calTbody = document.getElementById('calendar-table');
+      if (calTbody && data.calendar) {
+        calTbody.innerHTML = '';
+        for (const ev of (data.calendar.events || [])) {
+          calTbody.innerHTML += `<tr>
+            <td class="py-1.5 text-slate-400">${ev.time_str}</td>
+            <td class="py-1.5 text-blue-400 font-bold">${ev.currency}</td>
+            <td class="py-1.5 text-slate-200">${ev.title}</td>
+            <td class="py-1.5 text-right text-amber-300">${ev.impact}</td>
+          </tr>`;
+        }
+      }
+
+      // Factors
+      const fBars = document.getElementById('factor-bars');
+      if (fBars) {
+        fBars.innerHTML = '';
+        for (const [k, v] of Object.entries(sum.factors || {})) {
+          fBars.innerHTML += `<div class="flex justify-between p-1.5 rounded bg-slate-900 border border-slate-800">
+            <span class="text-slate-400">${k}</span>
+            <span class="font-bold ${v >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtScore(v)}</span>
+          </div>`;
+        }
+      }
+
+      // News
+      const nList = document.getElementById('news-list');
+      if (nList && data.news) {
+        nList.innerHTML = '';
+        document.getElementById('news-count').textContent = `${data.news.length} items`;
+        for (const item of data.news) {
+          nList.innerHTML += `<a href="${item.link}" target="_blank" class="block p-1.5 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-800">
+            <div class="flex justify-between text-[10px] text-slate-400 mb-0.5 font-mono">
+              <span class="text-blue-400 font-bold">${item.tag}</span>
+              <span>${item.published}</span>
+            </div>
+            <div class="text-slate-200 leading-snug">${item.title}</div>
+          </a>`;
+        }
+      }
+    }
+
+    function changePair(newPair) {
+      currentPair = newPair;
+      const badge = document.getElementById('bias-badge');
+      if (badge) badge.textContent = `LOADING ${newPair}...`;
+      
+      fetch(`/api/workspace/${newPair}`)
+        .then(r => r.json())
+        .then(data => renderWorkspace(data))
+        .catch(err => console.error("Fetch error:", err));
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(`SWITCH:${newPair}`);
+      }
+    }
+
+    function connectLiveStream() {
+      const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${wsProtocol}//${location.host}/ws/workspace/${currentPair}`);
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.pair) renderWorkspace(payload);
+        } catch(e) {
+          console.error("WS Parse error:", e);
+        }
+      };
+      ws.onclose = () => setTimeout(connectLiveStream, 4000);
+    }
+
+    fetch(`/api/workspace/${currentPair}`)
+      .then(r => r.json())
+      .then(renderWorkspace)
+      .catch(err => console.error("Initial fetch error:", err));
+
+    connectLiveStream();
+  </script>
+</body>
+</html>
