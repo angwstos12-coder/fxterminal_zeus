@@ -150,6 +150,6 @@ async def websocket_endpoint(websocket: WebSocket, pair: str):
     except WebSocketDisconnect:
         ACTIVE_CLIENTS = [(w, cp) for w, cp in ACTIVE_CLIENTS if w != websocket]
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def serve_dashboard():
     return FileResponse("index.html")
